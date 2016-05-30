@@ -402,7 +402,12 @@ class PlotCanvasView extends Renderer.View
     # reach the frame in time (sometimes) so force an update here for now
     @model.get('frame')._update_mappers()
 
+    # Get context and restore to its initial state. The restoring
+    # Would stricly speaking not be necessary, but in case there is an error
+    # during drawing, restore() won't be called enough. This guards for that.
     ctx = @canvas_view.ctx
+    for i in [0..3]
+      ctx.restore()
 
     # Get hidpi ratio
     @canvas_view.prepare_canvas(force_canvas)
