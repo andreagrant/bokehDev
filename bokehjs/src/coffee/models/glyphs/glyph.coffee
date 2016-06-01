@@ -133,13 +133,15 @@ class GlyphView extends Renderer.View
   _generic_line_legend: (ctx, x0, x1, y0, y1) ->
     reference_point = @get_reference_point() ? 0
     ctx.save()
-    ctx.beginPath()
-    ctx.moveTo(x0, (y0 + y1) /2)
-    ctx.lineTo(x1, (y0 + y1) /2)
-    if @visuals.line.doit
-      @visuals.line.set_vectorize(ctx, reference_point)
-      ctx.stroke()
-    ctx.restore()
+    try
+      ctx.beginPath()
+      ctx.moveTo(x0, (y0 + y1) /2)
+      ctx.lineTo(x1, (y0 + y1) /2)
+      if @visuals.line.doit
+        @visuals.line.set_vectorize(ctx, reference_point)
+        ctx.stroke()
+    finally
+      ctx.restore()
 
   _generic_area_legend: (ctx, x0, x1, y0, y1) ->
     reference_point = @get_reference_point() ? 0

@@ -15,23 +15,27 @@ class TextView extends Glyph.View
 
       if @visuals.text.doit
         ctx.save()
-        ctx.translate(sx[i]+_x_offset[i], sy[i]+_y_offset[i])
-        ctx.rotate(_angle[i])
+        try
+          ctx.translate(sx[i]+_x_offset[i], sy[i]+_y_offset[i])
+          ctx.rotate(_angle[i])
 
-        @visuals.text.set_vectorize(ctx, i)
-        ctx.fillText(_text[i], 0, 0)
-        ctx.restore()
+          @visuals.text.set_vectorize(ctx, i)
+          ctx.fillText(_text[i], 0, 0)
+        finally
+          ctx.restore()
 
   draw_legend: (ctx, x1, x2, y1, y2) ->
     ctx.save()
-    @text_props.set_value(ctx)
-    # override some features so we fit inside the legend
-    ctx.font = @text_props.font_value()
-    ctx.font = ctx.font.replace(/\b[\d\.]+[\w]+\b/, '10pt')
-    ctx.textAlign = "right"
-    ctx.textBaseline = "middle"
-    ctx.fillText("text", x2, (y1+y2)/2)
-    ctx.restore()
+    try
+      @text_props.set_value(ctx)
+      # override some features so we fit inside the legend
+      ctx.font = @text_props.font_value()
+      ctx.font = ctx.font.replace(/\b[\d\.]+[\w]+\b/, '10pt')
+      ctx.textAlign = "right"
+      ctx.textBaseline = "middle"
+      ctx.fillText("text", x2, (y1+y2)/2)
+    finally
+      ctx.restore()
 
 class Text extends Glyph.Model
   default_view: TextView

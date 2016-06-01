@@ -57,15 +57,17 @@ class ArrowView extends Annotation.View
     ctx = @plot_view.canvas_view.ctx
 
     ctx.save()
-    for i in [0...@_x_start.length]
-        @visuals.line.set_vectorize(ctx, i)
-        ctx.beginPath()
-        ctx.moveTo(@start[0][i], @start[1][i])
-        ctx.lineTo(@end[0][i], @end[1][i])
+    try
+      for i in [0...@_x_start.length]
+          @visuals.line.set_vectorize(ctx, i)
+          ctx.beginPath()
+          ctx.moveTo(@start[0][i], @start[1][i])
+          ctx.lineTo(@end[0][i], @end[1][i])
 
-        if @visuals.line.doit
-          ctx.stroke()
-    ctx.restore()
+          if @visuals.line.doit
+            ctx.stroke()
+    finally
+      ctx.restore()
 
   _draw_arrow_head: (head, start, end) ->
     ctx = @plot_view.canvas_view.ctx
@@ -76,12 +78,12 @@ class ArrowView extends Annotation.View
       angle = Math.PI/2 + atan2([start[0][i], start[1][i]], [end[0][i], end[1][i]])
 
       ctx.save()
-      ctx.translate(end[0][i], end[1][i])
-      ctx.rotate(angle)
-
-      head.render(ctx, i)
-
-      ctx.restore()
+      try
+        ctx.translate(end[0][i], end[1][i])
+        ctx.rotate(angle)
+        head.render(ctx, i)
+      finally
+        ctx.restore()
 
 class Arrow extends Annotation.Model
   default_view: ArrowView

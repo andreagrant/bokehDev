@@ -402,14 +402,12 @@ class PlotCanvasView extends Renderer.View
     # reach the frame in time (sometimes) so force an update here for now
     @model.get('frame')._update_mappers()
 
-    # Get context and restore to its initial state. The restoring
-    # Would stricly speaking not be necessary, but in case there is an error
-    # during drawing, restore() won't be called enough. This guards for that.
     ctx = @canvas_view.ctx
-    for i in [0..3]
-      ctx.restore()
 
-    # Get hidpi ratio
+    # Prepare the canvas and get pixel ratio.
+    # Note that this may cause a resize of the canvas, which means that
+    # this should be considered the main rendering entry point; any previous
+    # calls to save() may be undone (due to the canvas resize).
     @canvas_view.prepare_canvas(force_canvas)
     ctx.pixel_ratio = ratio = @canvas_view.pixel_ratio  # Also store on cts for WebGL
 
@@ -418,59 +416,61 @@ class PlotCanvasView extends Renderer.View
     ctx.scale(ratio, ratio)
     ctx.translate(0.5, 0.5)
 
-    frame_box = [
-      @canvas.vx_to_sx(@frame.get('left')),
-      @canvas.vy_to_sy(@frame.get('top')),
-      @frame.get('width'),
-      @frame.get('height'),
-    ]
+    try
+      frame_box = [
+        @canvas.vx_to_sx(@frame.get('left')),
+        @canvas.vy_to_sy(@frame.get('top')),
+        @frame.get('width'),
+        @frame.get('height'),
+      ]
 
-    @_map_hook(ctx, frame_box)
-    @_paint_empty(ctx, frame_box)
+      @_map_hook(ctx, frame_box)
+      @_paint_empty(ctx, frame_box)
 
-    if ctx.glcanvas
-      # Sync canvas size
-      canvas = @canvas_view.get_canvas_element()
-      ctx.glcanvas.width = canvas.width
-      ctx.glcanvas.height = canvas.height
-      # Prepare GL for drawing
-      gl = ctx.glcanvas.gl
-      gl.viewport(0, 0, ctx.glcanvas.width, ctx.glcanvas.height)
-      gl.clearColor(0, 0, 0, 0)
-      gl.clear(gl.COLOR_BUFFER_BIT || gl.DEPTH_BUFFER_BIT)
-      # Clipping
-      gl.enable(gl.SCISSOR_TEST)
-      flipped_top = ctx.glcanvas.height - ratio * (frame_box[1] + frame_box[3])
-      gl.scissor(ratio * frame_box[0], flipped_top, ratio * frame_box[2], ratio * frame_box[3])
-      # Setup blending
-      gl.enable(gl.BLEND)
-      gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE_MINUS_DST_ALPHA, gl.ONE)  # premultipliedAlpha == true
-      #gl.blendFuncSeparate(gl.ONE_MINUS_DST_ALPHA, gl.DST_ALPHA, gl.ONE_MINUS_DST_ALPHA, gl.ONE)  # Without premultipliedAlpha == false
+      if ctx.glcanvas
+        # Sync canvas size
+        canvas = @canvas_view.get_canvas_element()
+        ctx.glcanvas.width = canvas.width
+        ctx.glcanvas.height = canvas.height
+        # Prepare GL for drawing
+        gl = ctx.glcanvas.gl
+        gl.viewport(0, 0, ctx.glcanvas.width, ctx.glcanvas.height)
+        gl.clearColor(0, 0, 0, 0)
+        gl.clear(gl.COLOR_BUFFER_BIT || gl.DEPTH_BUFFER_BIT)
+        # Clipping
+        gl.enable(gl.SCISSOR_TEST)
+        flipped_top = ctx.glcanvas.height - ratio * (frame_box[1] + frame_box[3])
+        gl.scissor(ratio * frame_box[0], flipped_top, ratio * frame_box[2], ratio * frame_box[3])
+        # Setup blending
+        gl.enable(gl.BLEND)
+        gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE_MINUS_DST_ALPHA, gl.ONE)  # premultipliedAlpha == true
+        #gl.blendFuncSeparate(gl.ONE_MINUS_DST_ALPHA, gl.DST_ALPHA, gl.ONE_MINUS_DST_ALPHA, gl.ONE)  # Without premultipliedAlpha == false
 
-    if @visuals.outline_line.doit
-      @visuals.outline_line.set_value(ctx)
-      ctx.strokeRect.apply(ctx, frame_box)
+      if @visuals.outline_line.doit
+        @visuals.outline_line.set_value(ctx)
+        ctx.strokeRect.apply(ctx, frame_box)
 
-    @_render_levels(ctx, ['image', 'underlay', 'glyph', 'annotation'], frame_box)
+      @_render_levels(ctx, ['image', 'underlay', 'glyph', 'annotation'], frame_box)
 
-    if ctx.glcanvas
-      # Blit gl canvas into the 2D canvas. To do 1-on-1 blitting, we need
-      # to remove the hidpi transform, then blit, then restore.
-      # ctx.globalCompositeOperation = "source-over"  -> OK; is the default
-      logger.debug('drawing with WebGL')
-      ctx.restore()
-      ctx.drawImage(ctx.glcanvas, 0, 0)
-      # Set back hidpi transform
-      ctx.save()
-      ctx.scale(ratio, ratio)
-      ctx.translate(0.5, 0.5)
+      if ctx.glcanvas
+        # Blit gl canvas into the 2D canvas. To do 1-on-1 blitting, we need
+        # to remove the hidpi transform, then blit, then restore.
+        # ctx.globalCompositeOperation = "source-over"  -> OK; is the default
+        logger.debug('drawing with WebGL')
+        ctx.restore()
+        ctx.drawImage(ctx.glcanvas, 0, 0)
+        # Set back hidpi transform
+        ctx.save()
+        ctx.scale(ratio, ratio)
+        ctx.translate(0.5, 0.5)
 
-    @_render_levels(ctx, ['overlay', 'tool'])
+      @_render_levels(ctx, ['overlay', 'tool'])
 
-    if not @initial_range_info?
-      @set_initial_range()
+      if not @initial_range_info?
+        @set_initial_range()
 
-    ctx.restore()  # Restore to default state
+    finally
+      ctx.restore()  # Restore to default state
 
   resize: () ->
     width = @model._width._value
@@ -502,26 +502,26 @@ class PlotCanvasView extends Renderer.View
 
   _render_levels: (ctx, levels, clip_region) ->
     ctx.save()
+    try
+      if clip_region?
+        ctx.beginPath()
+        ctx.rect.apply(ctx, clip_region)
+        ctx.clip()
+        ctx.beginPath()
 
-    if clip_region?
-      ctx.beginPath()
-      ctx.rect.apply(ctx, clip_region)
-      ctx.clip()
-      ctx.beginPath()
+      indices = {}
+      for renderer, i in @mget("renderers")
+        indices[renderer.id] = i
 
-    indices = {}
-    for renderer, i in @mget("renderers")
-      indices[renderer.id] = i
+      sortKey = (renderer_view) -> indices[renderer_view.model.id]
 
-    sortKey = (renderer_view) -> indices[renderer_view.model.id]
+      for level in levels
+        renderer_views = _.sortBy(_.values(@levels[level]), sortKey)
 
-    for level in levels
-      renderer_views = _.sortBy(_.values(@levels[level]), sortKey)
-
-      for renderer_view in renderer_views
-        renderer_view.render()
-
-    ctx.restore()
+        for renderer_view in renderer_views
+          renderer_view.render()
+    finally
+      ctx.restore()
 
   _map_hook: (ctx, frame_box) ->
 
@@ -570,7 +570,7 @@ class PlotCanvas extends LayoutDOM.Model
         @min_border_left = @min_border
       if not @min_border_right?
         @min_border_right = @min_border
-    
+
     logger.debug("Plot initialized")
 
   _doc_attached: () ->

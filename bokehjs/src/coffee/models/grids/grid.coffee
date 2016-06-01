@@ -14,10 +14,12 @@ class GridView extends Renderer.View
     ctx = @plot_view.canvas_view.ctx
 
     ctx.save()
-    @_draw_regions(ctx)
-    @_draw_minor_grids(ctx)
-    @_draw_grids(ctx)
-    ctx.restore()
+    try
+      @_draw_regions(ctx)
+      @_draw_minor_grids(ctx)
+      @_draw_grids(ctx)
+    finally
+      ctx.restore()
 
   bind_bokeh_events: () ->
     @listenTo(@model, 'change', @request_render)

@@ -652,7 +652,7 @@ class LineGLGlyph extends BaseGLGlyph
 
     draw: (indices, mainGlyph, trans) ->
       mainGlGlyph = mainGlyph.glglyph
-
+      throw "asasd"
       if mainGlGlyph.data_changed
         if not (isFinite(trans.dx) and isFinite(trans.dy))
           return  # not sure why, but it happens on init sometimes (#4367)

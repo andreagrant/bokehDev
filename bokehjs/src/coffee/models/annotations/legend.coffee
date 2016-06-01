@@ -26,11 +26,13 @@ class LegendView extends Annotation.View
     # this is to measure text properties
     ctx = @plot_view.canvas_view.ctx
     ctx.save()
-    @visuals.label_text.set_value(ctx)
-    @text_widths = {}
-    for name in legend_names
-      @text_widths[name] = _.max([ctx.measureText(name).width, label_width])
-    ctx.restore()
+    try
+      @visuals.label_text.set_value(ctx)
+      @text_widths = {}
+      for name in legend_names
+        @text_widths[name] = _.max([ctx.measureText(name).width, label_width])
+    finally
+      ctx.restore()
 
     max_label_width = _.max(_.values(@text_widths))
 
@@ -100,49 +102,51 @@ class LegendView extends Annotation.View
     ctx = @plot_view.canvas_view.ctx
     ctx.save()
 
-    if @model.panel?
-      panel_offset = @_get_panel_offset()
-      ctx.translate(panel_offset.x, panel_offset.y)
+    try
+      if @model.panel?
+        panel_offset = @_get_panel_offset()
+        ctx.translate(panel_offset.x, panel_offset.y)
 
-    ctx.beginPath()
-    ctx.rect(bbox.x, bbox.y, bbox.width, bbox.height)
+      ctx.beginPath()
+      ctx.rect(bbox.x, bbox.y, bbox.width, bbox.height)
 
-    @visuals.background_fill.set_value(ctx)
-    ctx.fill()
-    if @visuals.border_line.doit
-      @visuals.border_line.set_value(ctx)
-      ctx.stroke()
+      @visuals.background_fill.set_value(ctx)
+      ctx.fill()
+      if @visuals.border_line.doit
+        @visuals.border_line.set_value(ctx)
+        ctx.stroke()
 
-    legend_padding = @mget('legend_padding')
-    legend_spacing = @mget('legend_spacing')
-    N = @mget("legends").length
+      legend_padding = @mget('legend_padding')
+      legend_spacing = @mget('legend_spacing')
+      N = @mget("legends").length
 
-    xoffset = 0
-    yoffset = 0
-    for [legend_name, glyphs], idx in @mget("legends")
-      if orientation == "vertical"
-        x1 = bbox.x + legend_spacing + legend_padding
-        x2 = x1 + glyph_width
-        y1 = bbox.y + yoffset + legend_spacing + legend_padding
-        y2 = y1 + glyph_height
-        yoffset += (bbox.height/N) - legend_padding
-      else
-        x1 = bbox.x + xoffset + legend_spacing + legend_padding
-        x2 = x1 + glyph_width
-        y1 = bbox.y + legend_spacing + legend_padding
-        y2 = y1 + glyph_height
-        xoffset += @text_widths[legend_name] + 3*legend_spacing + glyph_width
+      xoffset = 0
+      yoffset = 0
+      for [legend_name, glyphs], idx in @mget("legends")
+        if orientation == "vertical"
+          x1 = bbox.x + legend_spacing + legend_padding
+          x2 = x1 + glyph_width
+          y1 = bbox.y + yoffset + legend_spacing + legend_padding
+          y2 = y1 + glyph_height
+          yoffset += (bbox.height/N) - legend_padding
+        else
+          x1 = bbox.x + xoffset + legend_spacing + legend_padding
+          x2 = x1 + glyph_width
+          y1 = bbox.y + legend_spacing + legend_padding
+          y2 = y1 + glyph_height
+          xoffset += @text_widths[legend_name] + 3*legend_spacing + glyph_width
 
-      tx = x2 + legend_spacing
-      ty = y1 + @max_label_height / 2.0
+        tx = x2 + legend_spacing
+        ty = y1 + @max_label_height / 2.0
 
-      @visuals.label_text.set_value(ctx)
-      ctx.fillText(legend_name, tx, ty)
-      for renderer in glyphs
-        view = @plot_view.renderer_views[renderer.id]
-        view.draw_legend(ctx, x1, x2, y1, y2)
+        @visuals.label_text.set_value(ctx)
+        ctx.fillText(legend_name, tx, ty)
+        for renderer in glyphs
+          view = @plot_view.renderer_views[renderer.id]
+          view.draw_legend(ctx, x1, x2, y1, y2)
 
-    ctx.restore()
+    finally
+      ctx.restore()
 
   _get_size: () ->
     bbox = @compute_legend_bbox()

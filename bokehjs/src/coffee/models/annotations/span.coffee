@@ -65,16 +65,17 @@ class SpanView extends Annotation.View
       ctx = @plot_view.canvas_view.ctx
       ctx.save()
 
-      ctx.beginPath()
-      @visuals.line.set_value(ctx)
-      ctx.moveTo(sleft, stop)
-      if @mget('dimension') == "width"
-        ctx.lineTo(sleft + width, stop)
-      else
-        ctx.lineTo(sleft, stop + height)
-      ctx.stroke()
-
-      ctx.restore()
+      try
+        ctx.beginPath()
+        @visuals.line.set_value(ctx)
+        ctx.moveTo(sleft, stop)
+        if @mget('dimension') == "width"
+          ctx.lineTo(sleft + width, stop)
+        else
+          ctx.lineTo(sleft, stop + height)
+        ctx.stroke()
+      finally
+        ctx.restore()
 
   _calc_dim: (location, mapper) ->
       if @mget('location_units') == 'data'

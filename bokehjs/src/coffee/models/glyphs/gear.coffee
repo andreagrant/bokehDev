@@ -32,38 +32,41 @@ class GearView extends Glyph.View
       seq = seq0[3..]
 
       ctx.save()
-      ctx.translate(sx[i], sy[i])
-      ctx.rotate(_angle[i])
+      try
 
-      ctx.beginPath()
+        ctx.translate(sx[i], sy[i])
+        ctx.rotate(_angle[i])
 
-      rot = 2*Math.PI/_teeth[i]
-      ctx.moveTo(x, y)
+        ctx.beginPath()
 
-      for j in [0..._teeth[i]]
-        @_render_seq(ctx, seq)
-        ctx.rotate(rot)
+        rot = 2*Math.PI/_teeth[i]
+        ctx.moveTo(x, y)
 
-      ctx.closePath()
+        for j in [0..._teeth[i]]
+          @_render_seq(ctx, seq)
+          ctx.rotate(rot)
 
-      if _internal[i]
-        rim_radius = pitch_radius + 2.75*smodule[i]
-        ctx.moveTo(rim_radius, 0)
-        ctx.arc(0, 0, rim_radius, 0, 2*Math.PI, true)
-      else if _shaft_size[i] > 0
-        shaft_radius = pitch_radius*_shaft_size[i]
-        ctx.moveTo(shaft_radius, 0)
-        ctx.arc(0, 0, shaft_radius, 0, 2*Math.PI, true)
+        ctx.closePath()
 
-      if @visuals.fill.doit
-        @visuals.fill.set_vectorize(ctx, i)
-        ctx.fill()
+        if _internal[i]
+          rim_radius = pitch_radius + 2.75*smodule[i]
+          ctx.moveTo(rim_radius, 0)
+          ctx.arc(0, 0, rim_radius, 0, 2*Math.PI, true)
+        else if _shaft_size[i] > 0
+          shaft_radius = pitch_radius*_shaft_size[i]
+          ctx.moveTo(shaft_radius, 0)
+          ctx.arc(0, 0, shaft_radius, 0, 2*Math.PI, true)
 
-      if @visuals.line.doit
-        @visuals.line.set_vectorize(ctx, i)
-        ctx.stroke()
+        if @visuals.fill.doit
+          @visuals.fill.set_vectorize(ctx, i)
+          ctx.fill()
 
-      ctx.restore()
+        if @visuals.line.doit
+          @visuals.line.set_vectorize(ctx, i)
+          ctx.stroke()
+
+      finally
+        ctx.restore()
 
     return
 

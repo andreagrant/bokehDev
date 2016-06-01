@@ -82,20 +82,22 @@ class DynamicImageView extends Renderer.View
     image_obj = @mget('image_source').images[image_key]
     if image_obj?
       @map_canvas.save()
-      @_set_rect()
-      @map_canvas.globalAlpha = @mget('alpha')
-      [sxmin, symin] = @plot_view.frame.map_to_screen([image_obj.bounds[0]], [image_obj.bounds[3]], @plot_view.canvas)
-      [sxmax, symax] = @plot_view.frame.map_to_screen([image_obj.bounds[2]], [image_obj.bounds[1]], @plot_view.canvas)
-      sxmin = sxmin[0]
-      symin = symin[0]
-      sxmax = sxmax[0]
-      symax = symax[0]
-      sw = sxmax - sxmin
-      sh = symax - symin
-      sx = sxmin
-      sy = symin
-      @map_canvas.drawImage(image_obj.img, sx, sy, sw, sh)
-      @map_canvas.restore()
+      try
+        @_set_rect()
+        @map_canvas.globalAlpha = @mget('alpha')
+        [sxmin, symin] = @plot_view.frame.map_to_screen([image_obj.bounds[0]], [image_obj.bounds[3]], @plot_view.canvas)
+        [sxmax, symax] = @plot_view.frame.map_to_screen([image_obj.bounds[2]], [image_obj.bounds[1]], @plot_view.canvas)
+        sxmin = sxmin[0]
+        symin = symin[0]
+        sxmax = sxmax[0]
+        symax = symax[0]
+        sw = sxmax - sxmin
+        sh = symax - symin
+        sx = sxmin
+        sy = symin
+        @map_canvas.drawImage(image_obj.img, sx, sy, sw, sh)
+      finally
+        @map_canvas.restore()
 
   _set_rect:() ->
     outline_width = @plot_model.properties.outline_line_width.value()

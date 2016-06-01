@@ -90,17 +90,19 @@ class ImageURLView extends Glyph.View
 
     ctx.save()
 
-    ctx.globalAlpha = @mget("global_alpha")
+    try
+      ctx.globalAlpha = @mget("global_alpha")
 
-    if angle[i]
-      ctx.translate(sx, sy)
-      ctx.rotate(angle[i])
-      ctx.drawImage(image, 0, 0, sw[i], sh[i])
-      ctx.rotate(-angle[i])
-      ctx.translate(-sx, -sy)
-    else
-      ctx.drawImage(image, sx, sy, sw[i], sh[i])
-    ctx.restore()
+      if angle[i]
+        ctx.translate(sx, sy)
+        ctx.rotate(angle[i])
+        ctx.drawImage(image, 0, 0, sw[i], sh[i])
+        ctx.rotate(-angle[i])
+        ctx.translate(-sx, -sy)
+      else
+        ctx.drawImage(image, sx, sy, sw[i], sh[i])
+    finally
+      ctx.restore()
 
 class ImageURL extends Glyph.Model
   default_view: ImageURLView

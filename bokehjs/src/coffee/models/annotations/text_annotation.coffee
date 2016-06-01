@@ -60,26 +60,28 @@ class TextAnnotationView extends Annotation.View
 
     ctx.save()
 
-    ctx.beginPath()
-    ctx.translate(sx, sy)
-    if angle
-      ctx.rotate(angle)
+    try
+      ctx.beginPath()
+      ctx.translate(sx, sy)
+      if angle
+        ctx.rotate(angle)
 
-    ctx.rect(bbox_dims[0], bbox_dims[1], bbox_dims[2], bbox_dims[3])
+      ctx.rect(bbox_dims[0], bbox_dims[1], bbox_dims[2], bbox_dims[3])
 
-    if @visuals.background_fill.doit
-      @visuals.background_fill.set_value(ctx)
-      ctx.fill()
+      if @visuals.background_fill.doit
+        @visuals.background_fill.set_value(ctx)
+        ctx.fill()
 
-    if @visuals.border_line.doit
-      @visuals.border_line.set_value(ctx)
-      ctx.stroke()
+      if @visuals.border_line.doit
+        @visuals.border_line.set_value(ctx)
+        ctx.stroke()
 
-    if @visuals.text.doit
-      @visuals.text.set_value(ctx)
-      ctx.fillText(text, 0, 0)
+      if @visuals.text.doit
+        @visuals.text.set_value(ctx)
+        ctx.fillText(text, 0, 0)
 
-    ctx.restore()
+    finally
+      ctx.restore()
 
   _css_text: (ctx, text, sx, sy, angle) ->
     @$el.hide()

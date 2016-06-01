@@ -68,16 +68,18 @@ class BoxAnnotationView extends Annotation.View
     ctx = @plot_view.canvas_view.ctx
     ctx.save()
 
-    ctx.beginPath()
-    ctx.rect(sleft, stop, sright-sleft, sbottom-stop)
+    try
+      ctx.beginPath()
+      ctx.rect(sleft, stop, sright-sleft, sbottom-stop)
 
-    @visuals.fill.set_value(ctx)
-    ctx.fill()
+      @visuals.fill.set_value(ctx)
+      ctx.fill()
 
-    @visuals.line.set_value(ctx)
-    ctx.stroke()
+      @visuals.line.set_value(ctx)
+      ctx.stroke()
 
-    ctx.restore()
+    finally
+      ctx.restore()
 
   _calc_dim: (dim, mapper, frame_extrema) ->
     if @mget(dim)?

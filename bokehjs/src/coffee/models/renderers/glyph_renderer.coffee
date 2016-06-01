@@ -127,90 +127,92 @@ class GlyphRendererView extends Renderer.View
     ctx = @plot_view.canvas_view.ctx
     ctx.save()
 
-    selected = @mget('data_source').get('selected')
-    if !selected or selected.length == 0
-      selected = []
-    else
-      if selected['0d'].glyph
-        selected = indices
-      else if selected['1d'].indices.length > 0
-        selected = selected['1d'].indices
-      else if selected['2d'].indices.length > 0
-        selected = selected['2d'].indices
-      else
+    try
+      selected = @mget('data_source').get('selected')
+      if !selected or selected.length == 0
         selected = []
-
-    inspected = @mget('data_source').get('inspected')
-    if !inspected or inspected.length == 0
-      inspected = []
-    else
-      if inspected['0d'].glyph
-        inspected = indices
-      else if inspected['1d'].indices.length > 0
-        inspected = inspected['1d'].indices
-      else if inspected['2d'].indices.length > 0
-        inspected = inspected['2d'].indices
       else
+        if selected['0d'].glyph
+          selected = indices
+        else if selected['1d'].indices.length > 0
+          selected = selected['1d'].indices
+        else if selected['2d'].indices.length > 0
+          selected = selected['2d'].indices
+        else
+          selected = []
+
+      inspected = @mget('data_source').get('inspected')
+      if !inspected or inspected.length == 0
         inspected = []
+      else
+        if inspected['0d'].glyph
+          inspected = indices
+        else if inspected['1d'].indices.length > 0
+          inspected = inspected['1d'].indices
+        else if inspected['2d'].indices.length > 0
+          inspected = inspected['2d'].indices
+        else
+          inspected = []
 
-    lod_threshold = @plot_model.get('lod_threshold')
-    if @plot_view.interactive and !glsupport and lod_threshold? and @all_indices.length > lod_threshold
-      # Render decimated during interaction if too many elements and not using GL
-      indices = @decimated
-      glyph = @decimated_glyph
-      nonselection_glyph = @decimated_glyph
-      selection_glyph = @selection_glyph
-    else
-      glyph = @glyph
-      nonselection_glyph = @nonselection_glyph
-      selection_glyph = @selection_glyph
+      lod_threshold = @plot_model.get('lod_threshold')
+      if @plot_view.interactive and !glsupport and lod_threshold? and @all_indices.length > lod_threshold
+        # Render decimated during interaction if too many elements and not using GL
+        indices = @decimated
+        glyph = @decimated_glyph
+        nonselection_glyph = @decimated_glyph
+        selection_glyph = @selection_glyph
+      else
+        glyph = @glyph
+        nonselection_glyph = @nonselection_glyph
+        selection_glyph = @selection_glyph
 
-    if @hover_glyph? and inspected.length
-      indices = _.without.bind(null, indices).apply(null, inspected)
+      if @hover_glyph? and inspected.length
+        indices = _.without.bind(null, indices).apply(null, inspected)
 
-    if not (selected.length and @have_selection_glyphs())
+      if not (selected.length and @have_selection_glyphs())
+          trender = Date.now()
+          glyph.render(ctx, indices, @glyph)
+          if @hover_glyph and inspected.length
+            @hover_glyph.render(ctx, inspected, @glyph)
+          dtrender = Date.now() - trender
+
+      else
+        # reset the selection mask
+        tselect = Date.now()
+        selected_mask = {}
+        for i in selected
+          selected_mask[i] = true
+
+        # intersect/different selection with render mask
+        selected = new Array()
+        nonselected = new Array()
+        for i in indices
+          if selected_mask[i]?
+            selected.push(i)
+          else
+            nonselected.push(i)
+        dtselect = Date.now() - tselect
+
         trender = Date.now()
-        glyph.render(ctx, indices, @glyph)
-        if @hover_glyph and inspected.length
+        nonselection_glyph.render(ctx, nonselected, @glyph)
+        selection_glyph.render(ctx, selected, @glyph)
+        if @hover_glyph?
           @hover_glyph.render(ctx, inspected, @glyph)
         dtrender = Date.now() - trender
 
-    else
-      # reset the selection mask
-      tselect = Date.now()
-      selected_mask = {}
-      for i in selected
-        selected_mask[i] = true
+      @last_dtrender = dtrender
 
-      # intersect/different selection with render mask
-      selected = new Array()
-      nonselected = new Array()
-      for i in indices
-        if selected_mask[i]?
-          selected.push(i)
-        else
-          nonselected.push(i)
-      dtselect = Date.now() - tselect
+      dttot = Date.now() - t0
+      logger.debug("#{@glyph.model.type} GlyphRenderer (#{@model.id}): render finished in #{dttot}ms")
+      logger.trace(" - map_data finished in       : #{dtmap}ms")
+      if dtmask?
+        logger.trace(" - mask_data finished in      : #{dtmask}ms")
+      if dtselect?
+        logger.trace(" - selection mask finished in : #{dtselect}ms")
+      logger.trace(" - glyph renders finished in  : #{dtrender}ms")
 
-      trender = Date.now()
-      nonselection_glyph.render(ctx, nonselected, @glyph)
-      selection_glyph.render(ctx, selected, @glyph)
-      if @hover_glyph?
-        @hover_glyph.render(ctx, inspected, @glyph)
-      dtrender = Date.now() - trender
-
-    @last_dtrender = dtrender
-
-    dttot = Date.now() - t0
-    logger.debug("#{@glyph.model.type} GlyphRenderer (#{@model.id}): render finished in #{dttot}ms")
-    logger.trace(" - map_data finished in       : #{dtmap}ms")
-    if dtmask?
-      logger.trace(" - mask_data finished in      : #{dtmask}ms")
-    if dtselect?
-      logger.trace(" - selection mask finished in : #{dtselect}ms")
-    logger.trace(" - glyph renders finished in  : #{dtrender}ms")
-
-    ctx.restore()
+    finally
+      ctx.restore()
 
   map_to_screen: (x, y) ->
     @plot_view.map_to_screen(x, y, @mget("x_range_name"), @mget("y_range_name"))

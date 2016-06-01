@@ -167,11 +167,13 @@ class TileRendererView extends Renderer.View
 
   _render_tiles: (tile_keys) ->
     @map_canvas.save()
-    @_set_rect()
-    @map_canvas.globalAlpha = @mget('alpha')
-    for tile_key in tile_keys
-      @_draw_tile(tile_key)
-    @map_canvas.restore()
+    try
+      @_set_rect()
+      @map_canvas.globalAlpha = @mget('alpha')
+      for tile_key in tile_keys
+        @_draw_tile(tile_key)
+    finally
+      @map_canvas.restore()
 
   _prefetch_tiles: () =>
     tile_source = @mget('tile_source')

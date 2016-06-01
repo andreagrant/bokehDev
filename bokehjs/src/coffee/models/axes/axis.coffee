@@ -19,12 +19,14 @@ class AxisView extends Renderer.View
       return
     ctx = @plot_view.canvas_view.ctx
     ctx.save()
-    @_draw_rule(ctx)
-    @_draw_major_ticks(ctx)
-    @_draw_minor_ticks(ctx)
-    @_draw_major_labels(ctx)
-    @_draw_axis_label(ctx)
-    ctx.restore()
+    try
+      @_draw_rule(ctx)
+      @_draw_major_ticks(ctx)
+      @_draw_minor_ticks(ctx)
+      @_draw_major_labels(ctx)
+      @_draw_axis_label(ctx)
+    try
+      ctx.restore()
 
   bind_bokeh_events: () ->
     @listenTo(@model, 'change', @plot_view.request_render)
